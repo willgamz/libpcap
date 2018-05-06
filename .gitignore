@@ -1,0 +1,6 @@
+
+*.exe
+*.pdb
+project/libpcap_cmd/.vs/libpcap_cmd/v14/.suo
+*.dll
+project/libpcap/.vs/libpcap/v14/.suo

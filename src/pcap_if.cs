@@ -3,7 +3,6 @@ using System.IO;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
-using System.Threading;
 
 namespace pcap
 {
@@ -26,13 +25,14 @@ namespace pcap
         public string description { get { return m_description; } }
         public uint flags { get { return m_flags; } }
 
-        public bool open_if_live(int snaplen = SNAPLEN)
+        public bool open(int snaplen = SNAPLEN)
         {
             if (m_open_if != IntPtr.Zero)
                 return false;
 
             var error = new StringBuilder(libpcap.PCAP_ERRBUF_SIZE);
-            m_open_if = libpcap.pcap_open(m_name, snaplen, 1, 100000, IntPtr.Zero, error);
+            m_open_if = libpcap.pcap_open(m_name, snaplen, 
+                libpcap.PCAP_OPENFLAG_PROMISCUOUS, 0, IntPtr.Zero, error);
 
             if (m_open_if == IntPtr.Zero)
                 return false;           
@@ -42,6 +42,7 @@ namespace pcap
 
         public void close_if() { libpcap.pcap_close(m_open_if); }
 
+
         public bool loop_capture(pcap_pkt_handler handler)
         {
             if (m_open_if == IntPtr.Zero)
@@ -49,7 +50,7 @@ namespace pcap
 
             m_pkthandler = handler;
 
-            return (libpcap.pcap_loop(m_open_if, 0, pcap_pkthandler, IntPtr.Zero) == 0);
+            return (libpcap.pcap_loop(m_open_if, -1, pcap_pkthandler, IntPtr.Zero) == 0);
         }
 
         public void pcap_breakloop()
@@ -58,6 +59,28 @@ namespace pcap
                 return;
 
             libpcap.pcap_breakloop(m_open_if);
+        }
+
+        public bool send_packet(byte[] data)
+        {
+            if (m_open_if == IntPtr.Zero)
+                return false;
+
+            GCHandle pdata = GCHandle.Alloc(data, GCHandleType.Pinned);
+            IntPtr pdataptr = pdata.AddrOfPinnedObject();
+
+            int ret = 0;
+
+            try
+            {
+                ret = libpcap.pcap_sendpacket(m_open_if, pdataptr, data.Length);
+            }
+            finally
+            {
+                pdata.Free();
+            }           
+
+            return (ret == 0);
         }
 
         public string dump()

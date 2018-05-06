@@ -5,7 +5,7 @@ using System.Text;
 namespace pcap
 {
     [StructLayout(LayoutKind.Sequential)]
-    public struct pcap_if_t
+    internal struct pcap_if_t
     {
         public IntPtr next;
         public IntPtr name;
@@ -15,7 +15,7 @@ namespace pcap
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct pcap_addr_t
+    internal struct pcap_addr_t
     {
         public IntPtr next;
         public IntPtr addr;
@@ -25,7 +25,7 @@ namespace pcap
     };
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct sockaddr_t
+    internal struct sockaddr_t
     {
         public ushort sa_family;
         public IntPtr sa_data;
@@ -75,8 +75,9 @@ namespace pcap
         [DllImport(lib, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void pcap_close(IntPtr p);
 
+        //int pcap_sendpacket(pcap_t* p, u_char* buf, int size )
         [DllImport(lib, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern int pcap_sendpacket(IntPtr pcapif, byte[] buf, int size);
+        internal static extern int pcap_sendpacket(IntPtr pcapif, IntPtr buf, int size);
 
         //typedef void (*pcap_handler)(u_char *user, const struct pcap_pkthdr *h, const u_char* bytes);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
@@ -93,7 +94,16 @@ namespace pcap
             [In] [MarshalAs(UnmanagedType.FunctionPtr)] pcap_handler callback,
             [In] IntPtr user);
 
-        
+
+        //int pcap_dispatch(pcap_t* p, int cnt, pcap_handler callback, u_char* user);
+        [DllImport(lib, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        internal static extern int pcap_dispatch(
+            [In] IntPtr p,
+            [In] int cnt,
+            [In] [MarshalAs(UnmanagedType.FunctionPtr)] pcap_handler callback,
+            [In] IntPtr user);
+
+
         //void pcap_breakloop(pcap_t* )
         [DllImport(lib, CallingConvention = CallingConvention.Cdecl)]
         internal static extern void pcap_breakloop(IntPtr p);
@@ -113,5 +123,5 @@ namespace pcap
         [DllImport(lib, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr pcap_next(IntPtr pcapif, IntPtr h);
 
-    }
+     }
 }
